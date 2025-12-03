@@ -1,141 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
+<button id="test">TEST FIRESTORE WRITE</button>
 
-<head>
-<meta charset="UTF-8">
-<title>Build a Business That Sells for You</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-
-<style>
-
-body{
-  background:#101010;
-  color:white;
-  font-family:sans-serif;
-  padding:20px;
-}
-
-.container{
-  max-width:700px;
-  margin:auto;
-}
-
-input{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border-radius:6px;
-  border:none;
-}
-
-button{
-  width:100%;
-  padding:12px;
-  margin-top:12px;
-  background:gold;
-  border:none;
-  font-size:18px;
-  font-weight:bold;
-  border-radius:8px;
-  cursor:pointer;
-}
-
-.success{color:#00ffae;}
-.error{color:#ff7070;}
-small{opacity:.7;}
-
-#videoSection{
-  display:none;
-  margin-top:20px;
-}
-
-#ctaOverlay{
-  display:none;
-  background:#000000e6;
-  position:fixed;
-  bottom:0;
-  left:0;
-  right:0;
-  padding:16px;
-  text-align:center;
-  z-index:999;
-}
-
-#ctaOverlay button{
-  background:#25ff00;
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="container">
-
-<h1>Build a Business That Sells for You</h1>
-
-<p>
-Stop chasing customers.<br>
-Learn how to build digital assets, platforms, and systems that generate income automatically.
-</p>
-
-<h3>Enter your details to unlock the training:</h3>
-
-<form id="leadForm">
-  <input type="email" id="email" placeholder="Your email address" required>
-  <input type="tel" id="phone" placeholder="WhatsApp phone (+234...)" required>
-
-  <button type="submit">Unlock Training</button>
-
-  <p id="message"></p>
-  <small>Your details are safe and only used for training communication.</small>
-</form>
-
-<!-- VIDEO -->
-<div id="videoSection">
-  <hr>
-
-  <video id="trainingVideo"
-         width="100%"
-         height="320"
-         controls
-         preload="auto"
-         playsinline>
-    <source src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa"
-            type="video/mp4">
-  </video>
-
-  <p id="progressText"></p>
-</div>
-
-</div>
-
-<!-- MID-VIDEO CTA -->
-<div id="ctaOverlay">
-  <p><b>🔥 Ready to go from idea to income?</b></p>
-  <p>Continue your journey inside the P2P Masterclass.</p>
-  <button onclick="goToMasterclass()">Join Masterclass Now</button>
-</div>
-
-<!-- ======================== FIREBASE ======================== -->
 <script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-import { initializeApp } from
-"https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-
-import {
-  getFirestore,
-  addDoc,
-  collection,
-  query,
-  where,
-  getDocs,
-  serverTimestamp
-} from
-"https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-
-
-// ---------------- FIREBASE CONFIG ----------------
 const firebaseConfig = {
   apiKey: "AIzaSyAUYkQ5wA3ncNqNvCkJFfqLkrLwolx632k",
   authDomain: "gated-video-landing-page.firebaseapp.com",
@@ -143,145 +11,21 @@ const firebaseConfig = {
   storageBucket: "gated-video-landing-page.firebasestorage.app",
   messagingSenderId: "942723264796",
   appId: "1:942723264796:web:95f20f94f88af0147d8ad9",
-  measurementId: "G-TTW0ZEL2T9"
 };
 
-
-// INIT FIREBASE
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-
-// DOM
-const form = document.getElementById("leadForm");
-const emailInput = document.getElementById("email");
-const phoneInput = document.getElementById("phone");
-const message = document.getElementById("message");
-
-const videoBox = document.getElementById("videoSection");
-const video = document.getElementById("trainingVideo");
-const progressText = document.getElementById("progressText");
-const overlay = document.getElementById("ctaOverlay");
-
-
-// VALIDATION
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneRegex = /^\+?[0-9]{10,15}$/;
-
-
-// ---------------- FORM SUBMIT ----------------
-form.addEventListener("submit", async (e)=>{
-  e.preventDefault();
-
-  const email = emailInput.value.trim();
-  const phone = phoneInput.value.trim();
-
-  // VALIDATE FORMAT
-  if(!emailRegex.test(email)){
-    showError("❌ Enter a valid email address");
-    return;
-  }
-
-  if(!phoneRegex.test(phone)){
-    showError("❌ Enter a valid WhatsApp number");
-    return;
-  }
-
-  try{
-
-    // DUPLICATE CHECK (READ SAFE)
-    const q = query(
-      collection(db,"leads"),
-      where("email","==",email)
-    );
-
-    const snap = await getDocs(q);
-
-    if(!snap.empty){
-      showError("⚠️ This email has already been registered");
-      return;
-    }
-
-    // SAVE LEAD
+document.getElementById("test").onclick = async ()=>{
+  try {
     await addDoc(collection(db,"leads"),{
-      email,
-      phone,
-      source:"Build A Business Training",
-      createdAt: serverTimestamp()
+      email: "test@test.com",
+      phone: "+2348012345678"
     });
-
-    // SUCCESS UI
-    message.className="success";
-    message.textContent="✅ Access unlocked! Enjoy the training.";
-
-    localStorage.setItem("viewerEmail",email);
-
-    form.reset();
-    form.style.display="none";
-
-    videoBox.style.display="block";
-    video.load();
-
-  }
-  catch(err){
+    alert("✅ FIRESTORE WRITE SUCCESS");
+  } catch(err){
     console.error(err);
-    showError("❌ Could not save your details. Try again.");
+    alert("❌ WRITE FAILED");
   }
-
-});
-
-
-// ---------------- VIDEO RESUME ----------------
-window.addEventListener("load",()=>{
-  const t = localStorage.getItem("videoTime");
-  if(t){
-    video.currentTime = parseFloat(t);
-  }
-});
-
-
-// ---------------- WATCH TRACKING ----------------
-video.addEventListener("timeupdate",()=>{
-
-  localStorage.setItem("videoTime", video.currentTime);
-
-  const percent =
-    Math.floor((video.currentTime / video.duration) * 100 || 0);
-
-  progressText.textContent = `Watched: ${percent}%`;
-
-  if(percent >= 80){
-    overlay.style.display="block";
-  }
-
-});
-
-
-// ---------------- REDIRECT ON END ----------------
-video.addEventListener("ended",()=>{
-
-  localStorage.removeItem("videoTime");
-
-  alert("🎉 Training complete! Redirecting to P2P Masterclass.");
-
-  window.location.href="https://P2P.teknnuku.xyz";
-
-});
-
-
-// ---------------- CTA CLICK ----------------
-window.goToMasterclass = function(){
-  window.location.href="https://P2P.teknnuku.xyz";
-};
-
-
-// ---------------- HELPER ----------------
-function showError(text){
-  message.className="error";
-  message.textContent=text;
 }
-
 </script>
-
-</body>
-</html>
