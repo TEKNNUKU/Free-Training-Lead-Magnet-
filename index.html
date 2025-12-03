@@ -7,12 +7,57 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {font-family:sans-serif;background:#101010;color:white;padding:20px}
-.container {max-width:700px;margin:auto}
-input {width:100%;padding:12px;margin-top:10px}
-button {width:100%;padding:12px;margin-top:10px;background:gold;border:none;font-size:18px;font-weight:bold}
-#video {display:none;margin-top:20px}
-.success {color:#00ffae;margin-top:10px}
+
+body {
+  background:#101010;
+  color:white;
+  font-family:sans-serif;
+  padding:20px;
+}
+
+.container { max-width:700px; margin:auto }
+
+input {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:6px;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  margin-top:12px;
+  background:gold;
+  border:none;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.success { color:#00ffae }
+.error { color:#ff7070 }
+small { opacity:0.7 }
+
+#videoSection { display:none; margin-top:20px }
+
+#ctaOverlay {
+  display:none;
+  background:#000000e6;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:16px;
+  text-align:center;
+  z-index:999;
+}
+
+#ctaOverlay button {
+  background:#25ff00;
+}
+
 </style>
 </head>
 
@@ -21,37 +66,77 @@ button {width:100%;padding:12px;margin-top:10px;background:gold;border:none;font
 <div class="container">
 
 <h1>Build a Business That Sells for You</h1>
+
 <p>
-Stop chasing customers.  
+Stop chasing customers.<br>
 Learn how to build digital assets, platforms, and systems that generate income automatically.
 </p>
 
-<h3>Enter your email to unlock the training:</h3>
+<h3>Enter your details to unlock the training:</h3>
 
 <form id="emailForm">
-<input type="email" id="email" placeholder="Your email address" required>
-<button type="submit">Unlock Training</button>
-<p id="message" class="success"></p>
+
+  <input type="email" id="email" placeholder="Your email address" required>
+
+  <input type="tel" id="phone" placeholder="WhatsApp phone (+234...)" required>
+
+  <button type="submit">Unlock Training</button>
+
+  <p id="message"></p>
+
+  <small>Your details are safe and used only for training follow-ups.</small>
+
 </form>
 
-<div id="video">
+<!-- VIDEO ------------------------------------------------>
+
+<div id="videoSection">
+
 <hr>
-<iframe width="100%" height="320"
-src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa"
-frameborder="0" allowfullscreen></iframe>
-</div>
+
+<video id="trainingVideo"
+       width="100%"
+       height="320"
+       controls
+       playsinline>
+  <source src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa"
+          type="video/mp4">
+</video>
+
+<p id="progressText"></p>
 
 </div>
 
-<!-- ================= FIREBASE ================= -->
+</div>
+
+<!-- MID-VIDEO CTA -->
+<div id="ctaOverlay">
+  <p><b>🔥 Ready to go from idea to income?</b></p>
+  <p>Continue your journey inside the P2P Masterclass.</p>
+  <button onclick="goToMasterclass()">Join Masterclass Now</button>
+</div>
+
+
+<!---------------------------------------------------------->
+<!-- FIREBASE + TELEGRAM SCRIPT -->
+<!---------------------------------------------------------->
 
 <script type="module">
 
-// Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-// ✅ YOUR FIREBASE CONFIG
+import {
+  getFirestore,
+  addDoc,
+  collection,
+  query,
+  where,
+  getDocs,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+
+/* FIREBASE CONFIG */
 const firebaseConfig = {
   apiKey: "AIzaSyAUYkQ5wA3ncNqNvCkJFfqLkrLwolx632k",
   authDomain: "gated-video-landing-page.firebaseapp.com",
@@ -62,52 +147,160 @@ const firebaseConfig = {
   measurementId: "G-TTW0ZEL2T9"
 };
 
-// Init Firebase
+/* TELEGRAM CONFIG */
+const TELEGRAM_BOT_TOKEN = "PUT-YOUR-BOT-TOKEN-HERE";
+const TELEGRAM_CHAT_ID = "PUT-YOUR-CHAT-ID-HERE";
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// DOM references
+/* DOM */
 const form = document.getElementById("emailForm");
 const emailInput = document.getElementById("email");
-const videoBox = document.getElementById("video");
-const message = document.getElementById("message");
+const phoneInput = document.getElementById("phone");
+const videoBox = document.getElementById("videoSection");
+const video = document.getElementById("trainingVideo");
 
-// FORM SUBMIT
+const message = document.getElementById("message");
+const progressText = document.getElementById("progressText");
+const overlay = document.getElementById("ctaOverlay");
+
+/* VALIDATORS */
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+?[0-9]{10,15}$/;
+
+
+/* FORM SUBMIT */
 form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const email = emailInput.value.trim();
+  const phone = phoneInput.value.trim();
 
-  if (!email) {
-    alert("Enter a valid email");
+  if (!emailRegex.test(email)) {
+    message.className = "error";
+    message.innerText = "❌ Enter a valid email";
+    return;
+  }
+
+  if (!phoneRegex.test(phone)) {
+    message.className = "error";
+    message.innerText = "❌ Enter a valid WhatsApp number";
     return;
   }
 
   try {
 
-    // Save email
-    await addDoc(collection(db, "leads"), {
-      email: email,
-      source: "Build A Business Training",
+    // BLOCK DUPLICATE EMAILS
+    const q = query(collection(db,"leads"), where("email","==",email));
+    const snaps = await getDocs(q);
+
+    if(!snaps.empty){
+      message.className="error";
+      message.innerText="⚠️ This email is already registered.";
+      return;
+    }
+
+    // SAVE LEAD
+    await addDoc(collection(db,"leads"), {
+      email,
+      phone,
+      source:"Build A Business Training",
       createdAt: serverTimestamp()
     });
 
-    // UI SUCCESS
-    message.innerText = "✅ Access unlocked. Enjoy the training.";
+    // TELEGRAM ALERT
+    await sendTelegramAlert(email, phone);
 
-    // Unlock Video
-    videoBox.style.display = "block";
+    // UI SUCCESS
+    message.className="success";
+    message.innerText="✅ Access unlocked. Enjoy the training.";
+
+    localStorage.setItem("viewerEmail",email);
 
     form.reset();
+    form.style.display="none";
+    videoBox.style.display="block";
 
-  } catch (error) {
+  } catch (err){
 
-    alert("Error saving your email. Try again.");
-    console.error(error);
+    console.error(err);
+    message.className="error";
+    message.innerText="❌ Error saving details.";
 
+  }
+});
+
+
+/* RESUME PLAYBACK */
+window.addEventListener("load",()=>{
+  const savedTime = localStorage.getItem("videoTime");
+  if(savedTime){
+    video.currentTime = parseFloat(savedTime);
+  }
+});
+
+
+/* WATCH TRACKING + CTA */
+video.addEventListener("timeupdate", () => {
+
+  localStorage.setItem("videoTime", video.currentTime);
+
+  const percent = Math.floor((video.currentTime / video.duration) * 100 || 0);
+  progressText.innerText = `Watched: ${percent}%`;
+
+  if(percent >= 80){
+    overlay.style.display="block";
   }
 
 });
+
+
+/* REDIRECT ON VIDEO END */
+video.addEventListener("ended", () => {
+
+  localStorage.removeItem("videoTime");
+
+  alert("🎉 Training completed! Redirecting to Masterclass registration.");
+
+  window.location.href = "https://P2P.teknnuku.xyz";
+
+});
+
+
+/* CTA BUTTON */
+window.goToMasterclass = function(){
+  window.location.href="https://P2P.teknnuku.xyz";
+};
+
+
+/* TELEGRAM WEBHOOK */
+async function sendTelegramAlert(email, phone){
+
+  if(!TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID){
+    console.warn("Telegram credentials missing.");
+    return;
+  }
+
+  const text = `
+🔥 New Training Lead
+📩 Email: ${email}
+📱 WhatsApp: ${phone}
+🎯 Source: Build A Business Funnel
+`;
+
+  const url = `https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`;
+
+  await fetch(url,{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({
+      chat_id: TELEGRAM_CHAT_ID,
+      text
+    })
+  });
+
+}
 
 </script>
 
