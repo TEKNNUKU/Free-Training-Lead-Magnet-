@@ -49,8 +49,9 @@ small { opacity: 0.7; }
 }
 
 #ctaOverlay button { background: #25ff00; }
+
 #footer { text-align: center; margin-top: 20px; font-size: 14px; opacity: 0.7; }
-#footer a { color: #00ffae; text-decoration: none; }
+#footer a { color: gold; text-decoration: none; font-weight: bold; }
 </style>
 </head>
 
@@ -161,8 +162,11 @@ form.addEventListener("submit", async (e)=>{
     localStorage.setItem("viewerEmail", email);
 
     form.reset(); form.style.display="none";
-    formSubtitle.style.display="none";  // hide subtitle
-    footer.style.display="none";         // hide footer
+    footer.style.display="none";
+    
+    // Change subtitle dynamically
+    formSubtitle.textContent = "🎉 Training unlocked! Watch now to start growing your business.";
+    
     videoBox.style.display="block";
     video.load();
 
