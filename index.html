@@ -1,185 +1,115 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <title>Build a Business That Sells for You</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+
 <style>
-body{background:#101010;color:white;font-family:sans-serif;padding:20px}
-.container{max-width:700px;margin:auto}
-input{width:100%;padding:12px;margin-top:10px;border-radius:6px}
-button{width:100%;padding:12px;margin-top:12px;background:gold;border:none;font-size:18px;font-weight:bold;border-radius:8px}
-.success{color:#00ffae}
-.error{color:#ff7070}
-small{opacity:.7}
-#videoSection{display:none;margin-top:20px}
-#ctaOverlay{
-  display:none;background:#000000e6;position:fixed;bottom:0;left:0;right:0;
-  padding:16px;text-align:center;z-index:999
-}
-#ctaOverlay button{background:#25ff00}
+body {font-family:sans-serif;background:#101010;color:white;padding:20px}
+.container {max-width:700px;margin:auto}
+input {width:100%;padding:12px;margin-top:10px}
+button {width:100%;padding:12px;margin-top:10px;background:gold;border:none;font-size:18px;font-weight:bold}
+#video {display:none;margin-top:20px}
+.success {color:#00ffae;margin-top:10px}
 </style>
 </head>
 
 <body>
 
 <div class="container">
-<h1>Build a Business That Sells for You</h1>
-<p>Stop chasing customers.<br>Learn how to build digital systems that generate income automatically.</p>
 
-<h3>Enter your details to unlock the training:</h3>
+<h1>Build a Business That Sells for You</h1>
+<p>
+Stop chasing customers.  
+Learn how to build digital assets, platforms, and systems that generate income automatically.
+</p>
+
+<h3>Enter your email to unlock the training:</h3>
 
 <form id="emailForm">
-  <input type="email" id="email" placeholder="Your email address" required>
-  <input type="tel" id="phone" placeholder="WhatsApp phone (+234...)" required>
-  <button type="submit">Unlock Training</button>
-  <p id="message"></p>
-  <small>Your details are safe and used only for training follow-ups.</small>
+<input type="email" id="email" placeholder="Your email address" required>
+<button type="submit">Unlock Training</button>
+<p id="message" class="success"></p>
 </form>
 
-<!-- VIDEO -->
-<div id="videoSection">
+<div id="video">
 <hr>
-<video id="trainingVideo" width="100%" controls playsinline>
- <source src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa" type="video/mp4">
-</video>
-<p id="progressText"></p>
-</div>
+<iframe width="100%" height="320"
+src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa"
+frameborder="0" allowfullscreen></iframe>
 </div>
 
-<!-- CTA -->
-<div id="ctaOverlay">
-<p><b>🔥 Ready to go from idea to income?</b></p>
-<p>Continue your journey inside the P2P Masterclass.</p>
-<button onclick="goToMasterclass()">Join Masterclass Now</button>
 </div>
+
+<!-- ================= FIREBASE ================= -->
 
 <script type="module">
 
+// Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import {
-  getFirestore, addDoc,
-  collection, query,
-  where, getDocs,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-/* FIREBASE CONFIG */
+// ✅ YOUR FIREBASE CONFIG
 const firebaseConfig = {
- apiKey:"AIzaSyAUYkQ5wA3ncNqNvCkJFfqLkrLwolx632k",
- authDomain:"gated-video-landing-page.firebaseapp.com",
- projectId:"gated-video-landing-page",
- storageBucket:"gated-video-landing-page.firebasestorage.app",
- messagingSenderId:"942723264796",
- appId:"1:942723264796:web:95f20f94f88af0147d8ad9"
+  apiKey: "AIzaSyAUYkQ5wA3ncNqNvCkJFfqLkrLwolx632k",
+  authDomain: "gated-video-landing-page.firebaseapp.com",
+  projectId: "gated-video-landing-page",
+  storageBucket: "gated-video-landing-page.firebasestorage.app",
+  messagingSenderId: "942723264796",
+  appId: "1:942723264796:web:95f20f94f88af0147d8ad9",
+  measurementId: "G-TTW0ZEL2T9"
 };
 
+// Init Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* DOM */
+// DOM references
 const form = document.getElementById("emailForm");
-const email = document.getElementById("email");
-const phone = document.getElementById("phone");
-const msg = document.getElementById("message");
-const video = document.getElementById("trainingVideo");
-const box = document.getElementById("videoSection");
-const prog = document.getElementById("progressText");
-const overlay = document.getElementById("ctaOverlay");
+const emailInput = document.getElementById("email");
+const videoBox = document.getElementById("video");
+const message = document.getElementById("message");
 
-/* VALIDATION */
-const emailOK = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const phoneOK = /^\+?[0-9]{10,15}$/;
+// FORM SUBMIT
+form.addEventListener("submit", async (e) => {
+  e.preventDefault();
 
-/* FORM */
-form.onsubmit = async (e)=>{
- e.preventDefault();
+  const email = emailInput.value.trim();
 
- const eVal = email.value.trim();
- const pVal = phone.value.trim();
-
- if(!emailOK.test(eVal)){
-  msg.textContent="❌ Enter a valid email";
-  msg.className="error";
-  return;
- }
-
- if(!phoneOK.test(pVal)){
-  msg.textContent="❌ Enter valid WhatsApp number";
-  msg.className="error";
-  return;
- }
-
- try{
-
-  // DUP CHECK
-  const q = query(collection(db,"leads"),where("email","==",eVal));
-  const snap = await getDocs(q);
-  if(!snap.empty){
-   msg.textContent="⚠️ This email already registered.";
-   msg.className="error";
-   return;
+  if (!email) {
+    alert("Enter a valid email");
+    return;
   }
 
-  // SAVE ✅
-  await addDoc(collection(db,"leads"),{
-    email:eVal,
-    phone:pVal,
-    source:"Build A Business Training",
-    createdAt:serverTimestamp()
-  });
+  try {
 
-  // SHOW SUCCESS ✅
-  msg.textContent="✅ Access unlocked. Enjoy the training.";
-  msg.className="success";
+    // Save email
+    await addDoc(collection(db, "leads"), {
+      email: email,
+      source: "Build A Business Training",
+      createdAt: serverTimestamp()
+    });
 
-  localStorage.setItem("viewerEmail", eVal);
-  form.style.display="none";
-  box.style.display="block";
-  video.load();
+    // UI SUCCESS
+    message.innerText = "✅ Access unlocked. Enjoy the training.";
 
-  // SEND TELEGRAM (NON-BLOCKING)
-  sendTelegramAlert(eVal, pVal);
+    // Unlock Video
+    videoBox.style.display = "block";
 
- }catch(err){
-  console.error(err);
-  msg.textContent="❌ Could not save your details.";
-  msg.className="error";
- }
+    form.reset();
 
-}
+  } catch (error) {
 
-/* RESUME */
-const t = localStorage.getItem("videoTime");
-if(t) video.currentTime = parseFloat(t);
+    alert("Error saving your email. Try again.");
+    console.error(error);
 
-/* TRACKING */
-video.addEventListener("timeupdate",()=>{
- localStorage.setItem("videoTime", video.currentTime);
- const pct = Math.floor(video.currentTime/video.duration*100||0);
- prog.textContent = `Watched ${pct}%`;
- if(pct>=80) overlay.style.display="block";
+  }
+
 });
-
-/* END => REDIRECT */
-video.addEventListener("ended",()=>{
- localStorage.removeItem("videoTime");
- window.location.href="https://P2P.teknnuku.xyz";
-});
-
-window.goToMasterclass = ()=>{
- window.location.href="https://P2P.teknnuku.xyz";
-};
-
-/* TELEGRAM – SAFE BG CALL */
-async function sendTelegramAlert(email, phone){
- fetch("/api/telegram",{
-   method:"POST",
-   headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({email,phone})
- }).catch(()=>{});
-}
 
 </script>
+
 </body>
 </html>
