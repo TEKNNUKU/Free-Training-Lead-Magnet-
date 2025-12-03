@@ -40,9 +40,9 @@ button{
   cursor:pointer;
 }
 
-.success{ color:#00ffae }
-.error{ color:#ff7070 }
-small{ opacity:.7 }
+.success{color:#00ffae;}
+.error{color:#ff7070;}
+small{opacity:.7;}
 
 #videoSection{
   display:none;
@@ -81,12 +81,14 @@ Learn how to build digital assets, platforms, and systems that generate income a
 
 <h3>Enter your details to unlock the training:</h3>
 
-<form id="emailForm">
+<form id="leadForm">
   <input type="email" id="email" placeholder="Your email address" required>
   <input type="tel" id="phone" placeholder="WhatsApp phone (+234...)" required>
+
   <button type="submit">Unlock Training</button>
+
   <p id="message"></p>
-  <small>Your details are safe and used only for training follow-ups.</small>
+  <small>Your details are safe and only used for training communication.</small>
 </form>
 
 <!-- VIDEO -->
@@ -98,11 +100,9 @@ Learn how to build digital assets, platforms, and systems that generate income a
          height="320"
          controls
          preload="auto"
-         playsinline
-         crossorigin="anonymous">
-    <source
-      src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa"
-      type="video/mp4">
+         playsinline>
+    <source src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa"
+            type="video/mp4">
   </video>
 
   <p id="progressText"></p>
@@ -117,13 +117,11 @@ Learn how to build digital assets, platforms, and systems that generate income a
   <button onclick="goToMasterclass()">Join Masterclass Now</button>
 </div>
 
-
-<!-- ========================================= -->
-<!-- FIREBASE + APP LOGIC -->
-<!-- ========================================= -->
+<!-- ======================== FIREBASE ======================== -->
 <script type="module">
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+import { initializeApp } from
+"https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 
 import {
   getFirestore,
@@ -133,7 +131,8 @@ import {
   where,
   getDocs,
   serverTimestamp
-} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+} from
+"https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 
 // ---------------- FIREBASE CONFIG ----------------
@@ -148,63 +147,62 @@ const firebaseConfig = {
 };
 
 
-// INIT
+// INIT FIREBASE
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 
-// ---------------- DOM ----------------
-const form = document.getElementById("emailForm");
+// DOM
+const form = document.getElementById("leadForm");
 const emailInput = document.getElementById("email");
 const phoneInput = document.getElementById("phone");
-
 const message = document.getElementById("message");
 
 const videoBox = document.getElementById("videoSection");
 const video = document.getElementById("trainingVideo");
 const progressText = document.getElementById("progressText");
-
 const overlay = document.getElementById("ctaOverlay");
 
 
-// ---------------- VALIDATION ----------------
+// VALIDATION
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[0-9]{10,15}$/;
 
 
-// ---------------- FORM HANDLER ----------------
+// ---------------- FORM SUBMIT ----------------
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
 
   const email = emailInput.value.trim();
   const phone = phoneInput.value.trim();
 
+  // VALIDATE FORMAT
   if(!emailRegex.test(email)){
-    message.className="error";
-    message.textContent="❌ Enter a valid email address.";
+    showError("❌ Enter a valid email address");
     return;
   }
 
   if(!phoneRegex.test(phone)){
-    message.className="error";
-    message.textContent="❌ Enter a valid WhatsApp number.";
+    showError("❌ Enter a valid WhatsApp number");
     return;
   }
 
   try{
 
-    // DUPLICATE CHECK
-    const q = query(collection(db,"leads"), where("email","==",email));
-    const existing = await getDocs(q);
+    // DUPLICATE CHECK (READ SAFE)
+    const q = query(
+      collection(db,"leads"),
+      where("email","==",email)
+    );
 
-    if(!existing.empty){
-      message.className="error";
-      message.textContent="⚠️ This email has already been registered.";
+    const snap = await getDocs(q);
+
+    if(!snap.empty){
+      showError("⚠️ This email has already been registered");
       return;
     }
 
-
-    // SAVE TO FIRESTORE
+    // SAVE LEAD
     await addDoc(collection(db,"leads"),{
       email,
       phone,
@@ -212,14 +210,9 @@ form.addEventListener("submit", async (e)=>{
       createdAt: serverTimestamp()
     });
 
-
-    // SAFE TELEGRAM NOTIFY (SERVERLESS - NO CORS)
-    sendTelegramAlert(email, phone);
-
-
-    // UI
+    // SUCCESS UI
     message.className="success";
-    message.textContent="✅ Access unlocked. Enjoy the training.";
+    message.textContent="✅ Access unlocked! Enjoy the training.";
 
     localStorage.setItem("viewerEmail",email);
 
@@ -229,40 +222,34 @@ form.addEventListener("submit", async (e)=>{
     videoBox.style.display="block";
     video.load();
 
-
-  }catch(err){
-
+  }
+  catch(err){
     console.error(err);
-    message.className="error";
-    message.textContent="❌ Could not save your details. Try again.";
-
+    showError("❌ Could not save your details. Try again.");
   }
 
 });
 
 
-// ---------------- RESUME VIDEO ----------------
+// ---------------- VIDEO RESUME ----------------
 window.addEventListener("load",()=>{
-
-  const resumeTime = localStorage.getItem("videoTime");
-
-  if(resumeTime){
-    video.currentTime = parseFloat(resumeTime);
+  const t = localStorage.getItem("videoTime");
+  if(t){
+    video.currentTime = parseFloat(t);
   }
-
 });
 
 
 // ---------------- WATCH TRACKING ----------------
-video.addEventListener("timeupdate", ()=>{
+video.addEventListener("timeupdate",()=>{
 
   localStorage.setItem("videoTime", video.currentTime);
 
-  const percent = Math.floor((video.currentTime / video.duration)*100 || 0);
+  const percent =
+    Math.floor((video.currentTime / video.duration) * 100 || 0);
 
   progressText.textContent = `Watched: ${percent}%`;
 
-  // SHOW CTA AFTER 80%
   if(percent >= 80){
     overlay.style.display="block";
   }
@@ -270,37 +257,28 @@ video.addEventListener("timeupdate", ()=>{
 });
 
 
-// ---------------- REDIRECT ON COMPLETE ----------------
-video.addEventListener("ended", ()=>{
+// ---------------- REDIRECT ON END ----------------
+video.addEventListener("ended",()=>{
 
   localStorage.removeItem("videoTime");
 
-  alert("🎉 Training completed! Redirecting to Masterclass registration.");
+  alert("🎉 Training complete! Redirecting to P2P Masterclass.");
 
-  window.location.href = "https://P2P.teknnuku.xyz";
+  window.location.href="https://P2P.teknnuku.xyz";
 
 });
 
 
+// ---------------- CTA CLICK ----------------
 window.goToMasterclass = function(){
-  window.location.href = "https://P2P.teknnuku.xyz";
+  window.location.href="https://P2P.teknnuku.xyz";
 };
 
 
-// ---------------- SAFE TELEGRAM PROXY ----------------
-async function sendTelegramAlert(email, phone){
-
-  try{
-    await fetch("/api/telegram",{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ email, phone })
-    });
-
-  }catch(err){
-    console.warn("Telegram proxy unreachable:", err);
-  }
-
+// ---------------- HELPER ----------------
+function showError(text){
+  message.className="error";
+  message.textContent=text;
 }
 
 </script>
