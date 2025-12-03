@@ -7,12 +7,65 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {font-family:sans-serif;background:#101010;color:white;padding:20px}
-.container {max-width:700px;margin:auto}
-input {width:100%;padding:12px;margin-top:10px}
-button {width:100%;padding:12px;margin-top:10px;background:gold;border:none;font-size:18px;font-weight:bold}
-#video {display:none;margin-top:20px}
-.success {color:#00ffae;margin-top:10px}
+body {
+  font-family:sans-serif;
+  background:#101010;
+  color:white;
+  padding:20px;
+}
+
+.container {
+  max-width:700px;
+  margin:auto;
+}
+
+input {
+  width:100%;
+  padding:12px;
+  margin-top:10px;
+  border-radius:6px;
+  border:none;
+}
+
+button {
+  width:100%;
+  padding:12px;
+  margin-top:12px;
+  background:gold;
+  border:none;
+  font-size:18px;
+  font-weight:bold;
+  border-radius:8px;
+  cursor:pointer;
+}
+
+.success { color:#00ffae; margin-top:10px; }
+.error { color:#ff7070; margin-top:10px; }
+
+#videoSection {
+  display:none;
+  margin-top:20px;
+}
+
+#ctaOverlay {
+  display:none;
+  background:#000000e6;
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  padding:16px;
+  text-align:center;
+  z-index:999;
+}
+
+#ctaOverlay button {
+  background:#25ff00;
+  border:none;
+  padding:10px 20px;
+  font-weight:bold;
+  cursor:pointer;
+}
 </style>
 </head>
 
@@ -22,36 +75,42 @@ button {width:100%;padding:12px;margin-top:10px;background:gold;border:none;font
 
 <h1>Build a Business That Sells for You</h1>
 <p>
-Stop chasing customers.  
+Stop chasing customers.<br>
 Learn how to build digital assets, platforms, and systems that generate income automatically.
 </p>
 
-<h3>Enter your email to unlock the training:</h3>
-
-<form id="emailForm">
-<input type="email" id="email" placeholder="Your email address" required>
-<button type="submit">Unlock Training</button>
-<p id="message" class="success"></p>
+<h3>Enter your details to unlock the training:</h3>
+<form id="leadForm">
+  <input type="email" id="email" placeholder="Your email address" required>
+  <input type="tel" id="whatsapp" placeholder="WhatsApp phone (+234...)" required>
+  <button type="submit">Unlock Training</button>
+  <p id="message" class="success"></p>
 </form>
 
-<div id="video">
-<hr>
-<iframe width="100%" height="320"
-src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa"
-frameborder="0" allowfullscreen></iframe>
+<!-- VIDEO -->
+<div id="videoSection">
+  <hr>
+  <video id="trainingVideo" width="100%" height="320" controls playsinline preload="auto">
+    <source src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa" type="video/mp4">
+  </video>
+  <p id="progressText"></p>
 </div>
 
 </div>
 
-<!-- ================= FIREBASE ================= -->
+<!-- MID-VIDEO CTA -->
+<div id="ctaOverlay">
+  <p><b>🔥 Ready to go from idea to income?</b></p>
+  <p>Continue your journey inside the P2P Masterclass.</p>
+  <button onclick="goToMasterclass()">Join Masterclass Now</button>
+</div>
 
 <script type="module">
 
-// Import Firebase SDK
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
-import { getFirestore, addDoc, collection, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { getFirestore, addDoc, collection, query, where, getDocs, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
-// ✅ YOUR FIREBASE CONFIG
+// 🔹 FIREBASE CONFIG
 const firebaseConfig = {
   apiKey: "AIzaSyAUYkQ5wA3ncNqNvCkJFfqLkrLwolx632k",
   authDomain: "gated-video-landing-page.firebaseapp.com",
@@ -66,48 +125,101 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// DOM references
-const form = document.getElementById("emailForm");
+// DOM
+const form = document.getElementById("leadForm");
 const emailInput = document.getElementById("email");
-const videoBox = document.getElementById("video");
+const phoneInput = document.getElementById("whatsapp");
 const message = document.getElementById("message");
 
+const videoBox = document.getElementById("videoSection");
+const video = document.getElementById("trainingVideo");
+const progressText = document.getElementById("progressText");
+const overlay = document.getElementById("ctaOverlay");
+
+// Validators
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const phoneRegex = /^\+?[0-9]{10,15}$/;
+
 // FORM SUBMIT
-form.addEventListener("submit", async (e) => {
+form.addEventListener("submit", async e => {
   e.preventDefault();
-
   const email = emailInput.value.trim();
+  const phone = phoneInput.value.trim();
 
-  if (!email) {
-    alert("Enter a valid email");
+  if(!emailRegex.test(email)) {
+    message.className="error";
+    message.textContent="❌ Enter a valid email address";
+    return;
+  }
+
+  if(!phoneRegex.test(phone)) {
+    message.className="error";
+    message.textContent="❌ Enter a valid WhatsApp number";
     return;
   }
 
   try {
+    // Duplicate check
+    const q = query(collection(db,"leads"), where("email","==",email));
+    const existing = await getDocs(q);
+    if(!existing.empty){
+      message.className="error";
+      message.textContent="⚠️ This email is already registered";
+      return;
+    }
 
-    // Save email
-    await addDoc(collection(db, "leads"), {
-      email: email,
-      source: "Build A Business Training",
+    // Save lead
+    await addDoc(collection(db,"leads"),{
+      email,
+      phone,
+      source:"Build A Business Training",
       createdAt: serverTimestamp()
     });
 
-    // UI SUCCESS
-    message.innerText = "✅ Access unlocked. Enjoy the training.";
+    // UI Success
+    message.className="success";
+    message.textContent="✅ Access unlocked. Enjoy the training.";
 
-    // Unlock Video
-    videoBox.style.display = "block";
-
+    localStorage.setItem("viewerEmail", email);
     form.reset();
+    form.style.display="none";
 
-  } catch (error) {
+    videoBox.style.display="block";
+    video.load();
 
-    alert("Error saving your email. Try again.");
-    console.error(error);
-
+  } catch(err){
+    console.error(err);
+    message.className="error";
+    message.textContent="❌ Could not save your details. Try again.";
   }
-
 });
+
+// Resume playback
+window.addEventListener("load", () => {
+  const resumeTime = localStorage.getItem("videoTime");
+  if(resumeTime) video.currentTime = parseFloat(resumeTime);
+});
+
+// Track progress & CTA
+video.addEventListener("timeupdate", () => {
+  localStorage.setItem("videoTime", video.currentTime);
+  const percent = Math.floor((video.currentTime / video.duration) * 100 || 0);
+  progressText.textContent = `Watched: ${percent}%`;
+
+  if(percent >= 80) overlay.style.display="block";
+});
+
+// Redirect on video end
+video.addEventListener("ended", () => {
+  localStorage.removeItem("videoTime");
+  alert("🎉 Training completed! Redirecting to Masterclass registration.");
+  window.location.href = "https://P2P.teknnuku.xyz";
+});
+
+// CTA button
+window.goToMasterclass = () => {
+  window.location.href = "https://P2P.teknnuku.xyz";
+};
 
 </script>
 
