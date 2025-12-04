@@ -20,10 +20,12 @@ body {
   margin: auto;
 }
 
-input, button {
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.8s ease;
+input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  border-radius: 6px;
+  border: none;
 }
 
 button {
@@ -42,19 +44,7 @@ button {
 .error { color: #ff7070; }
 small { opacity: 0.7; }
 
-#videoSection {
-  display: none;
-  margin-top: 20px;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 1s ease;
-}
-
-#videoSection.show {
-  display: block;
-  opacity: 1;
-  transform: translateY(0);
-}
+#videoSection { display: none; margin-top: 20px; }
 
 #progressContainer {
   width: 100%;
@@ -121,9 +111,9 @@ small { opacity: 0.7; }
 }
 
 #formSubtitle {
-  opacity: 0;
-  transform: translateY(20px);
   transition: all 0.8s ease;
+  display: block;
+  opacity: 1;
 }
 </style>
 </head>
@@ -158,7 +148,7 @@ small { opacity: 0.7; }
     <source src="https://pink-quiet-wolf-922.mypinata.cloud/ipfs/bafybeia4k6ubvkqwjyakoidtgm72yohkuzk6t464bz54y3yfxp3qzlvawa" type="video/mp4">
   </video>
 
-  <!-- Animated Progress Bar -->
+  <!-- Animated Progress Bar with Glow -->
   <div id="progressContainer">
     <div id="progressBar"></div>
   </div>
@@ -206,35 +196,34 @@ const formSubtitle = document.getElementById("formSubtitle");
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const phoneRegex = /^\+?[0-9]{10,15}$/;
 
-// Animate form fields on page load
-window.addEventListener("load", ()=>{
-  setTimeout(()=>{ formSubtitle.style.opacity = 1; formSubtitle.style.transform = "translateY(0)"; }, 200);
-  setTimeout(()=>{ emailInput.style.opacity = 1; emailInput.style.transform = "translateY(0)"; }, 400);
-  setTimeout(()=>{ phoneInput.style.opacity = 1; phoneInput.style.transform = "translateY(0)"; }, 600);
-  setTimeout(()=>{ form.querySelector("button").style.opacity = 1; form.querySelector("button").style.transform = "translateY(0)"; }, 800);
-});
-
 // Form submit
 form.addEventListener("submit", async (e)=>{
   e.preventDefault();
   const email = emailInput.value.trim();
   const phone = phoneInput.value.trim();
 
-  if(!emailRegex.test(email)){ message.className="error"; message.textContent="❌ Enter a valid email address."; return; }
-  if(!phoneRegex.test(phone)){ message.className="error"; message.textContent="❌ Enter a valid WhatsApp number."; return; }
+  if(!emailRegex.test(email)){
+    message.className="error"; message.textContent="❌ Enter a valid email address."; return;
+  }
+  if(!phoneRegex.test(phone)){
+    message.className="error"; message.textContent="❌ Enter a valid WhatsApp number."; return;
+  }
 
   try{
     const q = query(collection(db,"leads"), where("email","==",email));
     const existing = await getDocs(q);
-    if(!existing.empty){ message.className="error"; message.textContent="⚠️ This email has already been registered."; return; }
+    if(!existing.empty){
+      message.className="error"; message.textContent="⚠️ This email has already been registered."; return;
+    }
 
     await addDoc(collection(db,"leads"), { email, phone, source:"Build A Business Training", createdAt: serverTimestamp() });
 
     message.className="success"; message.textContent="✅ Access unlocked. Enjoy the training.";
     localStorage.setItem("viewerEmail", email);
-    form.reset(); form.style.display="none"; footer.style.display="none";
+    form.reset(); form.style.display="none";
+    footer.style.display="none";
 
-    // Animate subtitle text
+    // Animate subtitle
     formSubtitle.style.opacity = 0;
     formSubtitle.style.transform = "translateY(-20px)";
     setTimeout(()=>{
@@ -243,11 +232,13 @@ form.addEventListener("submit", async (e)=>{
       formSubtitle.style.transform = "translateY(0)";
     }, 800);
 
-    // Unlock and fade in video section
-    videoBox.classList.add("show");
+    videoBox.style.display="block";
     video.load();
 
-  }catch(err){ console.error(err); message.className="error"; message.textContent="❌ Could not save your details. Try again."; }
+  }catch(err){
+    console.error(err);
+    message.className="error"; message.textContent="❌ Could not save your details. Try again.";
+  }
 });
 
 // Resume video
@@ -262,7 +253,9 @@ video.addEventListener("timeupdate", ()=>{
   const percent = Math.floor((video.currentTime / video.duration)*100 || 0);
   progressBar.style.width = percent + "%";
 
-  if(percent >= 80 && !overlay.classList.contains("show")){ overlay.classList.add("show"); }
+  if(percent >= 80 && !overlay.classList.contains("show")){
+    overlay.classList.add("show");
+  }
 });
 
 // Redirect on video end
